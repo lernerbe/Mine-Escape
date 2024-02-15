@@ -26,8 +26,8 @@ struct Tile {
     bool discovered = false;
     bool investigated = false;
     int rubble;
-    size_t col;
     size_t row;
+    size_t col;
     bool isTNT = false;
 };
 
@@ -40,10 +40,10 @@ struct TileComparator {
         if (a.rubble != b.rubble) {
             return a.rubble > b.rubble; // Smallest rubble value has higher priority
         }
-        if (a.row != b.row) {
-            return a.row > b.row; // Smaller column number has higher priority
+        if (a.col != b.col) {
+            return a.col > b.col; // Smaller column number has higher priority
         }
-        return a.col > b.col; // Smaller row number has higher priority
+        return a.row > b.row; // Smaller row number has higher priority
     }
 };
 
@@ -95,8 +95,8 @@ class Map {
                     for (size_t j = 0; j < size; j++) {
                         Tile t;
                         cin >> t.rubble;
-                        t.col = i;
-                        t.row = j;
+                        t.row = i;
+                        t.col = j;
                         map2D[i][j] = t;
                         if (map2D[i][j].rubble == -1) map2D[i][j].isTNT = true;
                     }
@@ -183,58 +183,54 @@ class Mining {
             m.readInput();
             m.printInput();
             // Get necessary information from Map object
-            size_t currCol = m.getStart().first;
-            size_t currRow = m.getStart().second;
+            size_t currRow = m.getStart().first;
+            size_t currCol = m.getStart().second;
             size_t size = m.getSize();
-            pq.push(m.map2D[currCol][currRow]);
-            verbose(currRow, currCol, m.map2D[currCol][currRow]);
+            pq.push(m.map2D[currRow][currCol]);
+            verbose(currCol, currRow, m.map2D[currRow][currCol]);
 
-            if (m.map2D[currCol][currRow].isTNT) {
-                explodeNeighbors(m.map2D[currCol][currRow], m.map2D[currCol][currRow], size, pq);
+            if (m.map2D[currRow][currCol].isTNT) {
+                expload(m.map2D[currRow][currCol], pq);
             }
-            currCol = pq.top().col;
             currRow = pq.top().row;
+            currCol = pq.top().col;
             amountCleared += pq.top().rubble;
-            while (!pq.empty() && (currCol < size) && (currRow < size) && (currCol > 0) && (currRow > 0)) {
+            while (!pq.empty() && (currRow < size) && (currCol < size) && (currRow > 0) && (currCol > 0)) {
 
-                Tile &c = m.map2D[currCol][currRow]; // current
-                Tile &l = m.map2D[currCol-1][currRow]; // left
-                Tile &r = m.map2D[currCol+1][currRow]; // right
-                Tile &t = m.map2D[currCol][currRow-1]; // top
-                Tile &b = m.map2D[currCol][currRow+1]; // bottom
+                Tile &c = m.map2D[currRow][currCol]; // current
+                Tile &l = m.map2D[currRow-1][currCol]; // left
+                Tile &r = m.map2D[currRow+1][currCol]; // right
+                Tile &t = m.map2D[currRow][currCol-1]; // top
+                Tile &b = m.map2D[currRow][currCol+1]; // bottom
                 c.investigated = true;
                 c.discovered = true;
 
                 // push neighbors to PQ
                 if (l.discovered == false) { // left
-                    explodeNeighbors(c, l, size, pq);
                     pq.push(l);
                     l.discovered = true;
                 }
                 if (r.discovered == false) { // right
-                    explodeNeighbors(c, r, size, pq);
                     pq.push(r);
                     r.discovered = true;
                 }
                 if (t.discovered == false) { // top
-                    explodeNeighbors(c, t, size, pq);
                     pq.push(t);
                     t.discovered = true;
                 }
                 if (b.discovered == false) { // bottom
-                    explodeNeighbors(c, b, size, pq);
                     pq.push(b);
                     b.discovered = true;
                 }
                 amountCleared += pq.top().rubble;
-                currCol = pq.top().col;
                 currRow = pq.top().row;
+                currCol = pq.top().col;
                 numCleared++;
                 // for testing
                 // cout << pq.top().rubble << '\n';
 
                 pq.pop();
-                // expload(c, pq);
+                expload(c, pq);
     
             }
             printSummary();
@@ -242,79 +238,74 @@ class Mining {
             m.printInput();
         }
 
-        // void expload(Tile &c, priority_queue<Tile, vector<Tile>, TileComparator> &pq) {
-        //     c.rubble = 0; // Set the rubble of the neighbor TNT tile to zero
-        //     // Explode the neighbors of the neighbor recursively
-        //     cout << "TNT explosion at [" << c.col << "," << c.row << "]\n";
-        //     size_t size = m.getSize();
-        //     size_t nCol = c.col;
-        //     size_t nRow = c.row;
-        //     size_t exploadedCount = 0;
-        //     // if (nCol > 0) {// Check left neighbor
-        //     //     explodeNeighbors(c, m.map2D[nCol - 1][nRow], size, pq);
-        //     //     exploadedCount++;
-        //     //     // pq.push(m.map2D[nCol - 1][nRow]);
-        //     // }
-        //     // if (nCol < size - 1) {// Check right neighbor
-        //     //     explodeNeighbors(c, m.map2D[nCol + 1][nRow], size, pq);
-        //     //     exploadedCount++;
-        //     //     // pq.push(m.map2D[nCol + 1][nRow]);
-        //     // }
-        //     // if (nRow > 0) {// Check top neighbor
-        //     //     explodeNeighbors(c, m.map2D[nCol][nRow - 1], size, pq);
-        //     //     exploadedCount++;
-        //     //     // pq.push(m.map2D[nCol][nRow-1]);
-        //     // }
-        //     // if (nRow < size - 1) {// Check bottom neighbor
-        //     //     explodeNeighbors(c, m.map2D[nCol][nRow + 1], size, pq);
-        //     //     exploadedCount++;
-        //     //     // pq.push(m.map2D[nCol][nRow+1]);
-        //     // }
-
-        //     for (size_t i = 0; i < exploadedCount; i++) {
-        //         if (i==0) pq.pop();
-        //         cout << "Cleared by TNT: " << pq.top().rubble << " at " << "[" << pq.top().col << "," << pq.top().row << "]\n";
-        //         numCleared++;
-        //         pq.pop();
+        void expload(Tile &c, priority_queue<Tile, vector<Tile>, TileComparator> &pq) {
+            c.rubble = 0; // Set the rubble of the neighbor TNT tile to zero
+            // Explode the neighbors of the neighbor recursively
+            cout << "TNT explosion at [" << c.row << "," << c.col << "]\n";
+            size_t size = m.getSize();
+            size_t nRow = c.row;
+            size_t nCol = c.col;
+            size_t exploadedCount = 0;
+            if (nRow > 0) {// Check left neighbor
+                explodeNeighbors(c, m.map2D[nRow - 1][nCol], size, pq);
+                exploadedCount++;
+                // pq.push(m.map2D[nCol - 1][nRow]);
+            }
+            if (nRow < size - 1) {// Check right neighbor
+                explodeNeighbors(c, m.map2D[nRow + 1][nCol], size, pq);
+                exploadedCount++;
+                // pq.push(m.map2D[nCol + 1][nRow]);
+            }
+            if (nCol > 0) {// Check top neighbor
+                explodeNeighbors(c, m.map2D[nRow][nCol - 1], size, pq);
+                exploadedCount++;
+                // pq.push(m.map2D[nCol][nRow-1]);
+            }
+            if (nCol < size - 1) {// Check bottom neighbor
+                explodeNeighbors(c, m.map2D[nRow][nCol + 1], size, pq);
+                exploadedCount++;
+                // pq.push(m.map2D[nCol][nRow+1]);
+            }
+            for (size_t i = 0; i < exploadedCount; i++) {
+                if (i==0) pq.pop();
+                cout << "Cleared by TNT: " << pq.top().rubble << " at " << "[" << pq.top().row << "," << pq.top().col << "]\n";
+                numCleared++;
+                pq.pop();
                 
-        //     }
-        // }
+            }
+        }
 
         void explodeNeighbors(Tile &source, Tile &neighbor, size_t size, priority_queue<Tile, vector<Tile>, TileComparator> &pq) {
-            size_t exploadedCount = 0;
+
             if (source.isTNT && neighbor.isTNT && !source.investigated && neighbor.rubble != 0 && !source.discovered) {
-                cout << "TNT explosion at [" << neighbor.col << "," << neighbor.row << "]\n";
+                cout << "TNT explosion at [" << neighbor.row << "," << neighbor.col << "]\n";
                 neighbor.rubble = 0; // Set the rubble of the neighbor TNT tile to zero
                 // Explode the neighbors of the neighbor recursively
-                size_t nCol = neighbor.col;
                 size_t nRow = neighbor.row;
-                if (nCol > 0) {// Check left neighbor
-                    explodeNeighbors(neighbor, m.map2D[nCol - 1][nRow], size, pq);
-                    exploadedCount++;   
+                size_t nCol = neighbor.col;
+                if (nRow > 0) {// Check left neighbor
+                    explodeNeighbors(neighbor, m.map2D[nRow - 1][nCol], size, pq);
                     // if (source.isTNT && !m.map2D[nCol - 1][nRow].isTNT) {
                     //     pq.push(m.map2D[nCol - 1][nRow]);
                     //     m.map2D[nCol - 1][nRow].discovered = true;
                     // } 
                 }
-                if (nCol < size - 1) {// Check right neighbor
-                    explodeNeighbors(neighbor, m.map2D[nC l + 1][nRow], size, pq);
-                    exploadedCount++;
+                if (nRow < size - 1) {// Check right neighbor
+                    explodeNeighbors(neighbor, m.map2D[nRow + 1][nCol], size, pq);
                     // if (source.isTNT && !m.map2D[nCol + 1][nRow].isTNT) {
                     //     pq.push(m.map2D[nCol + 1][nRow]);
                     //     m.map2D[nCol + 1][nRow].discovered = true;
                     // } 
                 }
-                if (nRow > 0) {// Check top neighbor
-                    explodeNeighbors(neighbor, m.map2D[nCol][nRow - 1], size, pq);
-                    exploadedCount++;
+                if (nCol > 0) {// Check top neighbor
+                    explodeNeighbors(neighbor, m.map2D[nRow][nCol - 1], size, pq);
                     // if (source.isTNT && !m.map2D[nCol][nRow - 1].isTNT) {
                     //     pq.push(m.map2D[nCol][nRow-1]);
                     //     m.map2D[nCol][nRow-1].discovered = true;
                     // } 
                 }
-                if (nRow < size - 1) { // Check bottom neighbor
-                    explodeNeighbors(neighbor, m.map2D[nCol][nRow + 1], size, pq);
-                    exploadedCount++;
+                if (nCol < size - 1) { // Check bottom neighbor
+                    explodeNeighbors(neighbor, m.map2D[nRow][nCol + 1], size, pq);
                     // if (source.isTNT && !m.map2D[nCol][nRow+1].isTNT) {
                     //     pq.push(m.map2D[nCol][nRow+1]);
                     //     m.map2D[nCol - 1][nRow].discovered = true;
@@ -326,14 +317,6 @@ class Mining {
                 neighbor.discovered = true;
                 // cout << "Cleared by TNT: " << neighbor.rubble << " at " << "[" << neighbor.col << "," << neighbor.row << "]\n";
             }
-            //if (!source.isTNT && !neighbor.isTNT) {
-                for (size_t i = 0; i < exploadedCount; i++) {
-                if (i==0) pq.pop();
-                cout << "Cleared by TNT: " << pq.top().rubble << " at " << "[" << pq.top().col << "," << pq.top().row << "]\n";
-                numCleared++;
-                pq.pop();
-            //}
-            }
         }
         // solve
         void printSummary() {
@@ -342,7 +325,7 @@ class Mining {
         void verbose(const size_t &currRow, const size_t &currCol, Tile &c) {
             if (opt.verbose && !c.isTNT) {
                     cout << "Cleared: " << pq.top().rubble 
-                    << " at [" << currCol << "," << currRow << "]\n";
+                    << " at [" << currRow << "," << currCol << "]\n";
                 }
             // else if (opt.verbose && c.isTNT) {
             //     cout << "TNT explosion at [" << currRow << "," << currCol << "]\n";
