@@ -8,6 +8,8 @@
 #include <vector>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
+#include "P2random.h"
 using namespace std;
 
 // overload () operator
@@ -70,6 +72,7 @@ class Map {
             cin >> format;
             if (format != 'M' && format != 'V') {
                 cerr << "Invalid input mode" << endl;
+                exit(1);
             }
             // read in size
             cin >> junk >> size;
@@ -77,10 +80,12 @@ class Map {
             // error check for column
             if (start.first > size) {
                 cerr << "Invalid starting row" << endl;
+                exit(1);
             }
             // error check for row
             if (start.second > size) {
                 cerr << "Invalid starting row" << endl;
+                exit(1);
             }
             // Clear the existing content of map2D and then resize it
             map2D.clear();
@@ -101,6 +106,9 @@ class Map {
             }
             else { // grid input 
                 cin >> junk >> seed >> junk >> maxRubble >> junk >> tnt;
+                P2random p(std::stringstream& ss, size, seed, maxRubble, tnt);
+                istream &inputStream = (format == 'M') ? cin : ss;
+                
             }
         }
         void printInput() {
@@ -339,7 +347,7 @@ class Mining {
         void printMedian(Tile *c) {
             if (!opt.median || c->isTNT) return;
             push(c->rubbleOrig);
-            cout << "Median difficulty of clearing rubble is: " << fixed << setprecision(2) << getMedian() << "\n";
+            if (opt.median) cout << "Median difficulty of clearing rubble is: " << fixed << setprecision(2) << getMedian() << "\n";
         }
         void printStats() {
 
