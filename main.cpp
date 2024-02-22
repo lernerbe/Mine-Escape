@@ -60,9 +60,6 @@ class Map {
         size_t size = numeric_limits<size_t>::max();
         pair<size_t, size_t> start = {numeric_limits<size_t>::max(), numeric_limits<size_t>::max()};
         char format = 'F';
-        int seed = 0;
-        int maxRubble = 0;
-        size_t tnt = 0;
         Options opt;
 
     public:
@@ -70,7 +67,7 @@ class Map {
             string junk;
             // read in mapFormat
             cin >> format;
-            if (format != 'M' && format != 'V') {
+            if (format != 'M' && format != 'R') {
                 cerr << "Invalid input mode" << endl;
                 exit(1);
             }
@@ -104,11 +101,26 @@ class Map {
                     }
             }
             }
-            else { // grid input 
+            else { // psudorandom - grid input 
+                stringstream ss;
+                uint32_t seed, maxRubble, tnt;
                 cin >> junk >> seed >> junk >> maxRubble >> junk >> tnt;
-                P2random p(std::stringstream& ss, size, seed, maxRubble, tnt);
-                istream &inputStream = (format == 'M') ? cin : ss;
+                P2random::PR_init(ss, static_cast<uint32_t>(size), seed, maxRubble, tnt);
+                // istream &inputStream = (format == 'M') ? cin : ss;
                 
+                for (size_t i = 0; i < size; ++i) {
+                    for (size_t j = 0; j < size; j++) {
+                        int rubble;
+                        ss >> rubble;
+                        Tile t;
+                        t.rubble = rubble;
+                        t.rubbleOrig = rubble;
+                        t.row = i;
+                        t.col = j;
+                        map2D[i][j] = t;
+                        if (map2D[i][j].rubble == -1) map2D[i][j].isTNT = true;
+                    }
+                }
             }
         }
         void printInput() {
@@ -125,38 +137,13 @@ class Map {
                         }
                     }
                 }  
-
-            else { // map format == R
-                cout << "Seed: " << seed << '\n';
-                cout << "Max_Rubble: " << maxRubble << '\n';
-                cout << "TNT: " << tnt << '\n';
-            }
             cout << endl << endl;
-        }
-        // getter for format
-        char getFormat() {
-            return format;
         }
         // getter for size
         size_t getSize() {
             return size;
         }
-        // getter for map2D
-        vector<vector<Tile>> getMap2D() {
-            return map2D;
-        }
-        // getter for maxRubble
-        int getMaxRubble() {
-            return maxRubble;
-        }
-        // getter for seed
-        int getSeed() {
-            return seed;
-        }
-        // getter for tnt
-        size_t getTNT() {
-            return tnt;
-        }
+
         pair<size_t, size_t> getStart() {
             return start;
         }
@@ -197,8 +184,9 @@ class Mining {
             size_t size = m.getSize();
             Tile* c = &(m.map2D[m.getStart().first][m.getStart().second]);
             c->discovered = true;
+            if (size == 1) push(c->rubbleOrig);
             pq.push(c);
-            // push(c->rubble);
+            verbose(c);
 
             while (!pq.empty() && (c->row < size) && (c->col < size) && (c->row > 0) && (c->col > 0)) {
                 c = pq.top();
@@ -211,8 +199,8 @@ class Mining {
                     continue; 
 
                 } else {
-                    amountCleared += c->rubble;
-                    c->rubble = 0;
+                    // amountCleared += c->rubble;
+                    // c->rubble = 0;
                 }
                 c->rubble = 0;
 
@@ -267,11 +255,12 @@ class Mining {
                     }
                 }
             }
-            if (numCleared == 0) {
-                numCleared++;
-                amountCleared += c->rubbleOrig;
-                // what if the only tile is TNT?
-            }
+            // if (numCleared == 0) {
+            //     numCleared++;
+            //     amountCleared += c->rubbleOrig;
+            //     // what if the only tile is TNT?
+            // }
+
             printSummary();
             // m.printInput();
             }
@@ -338,10 +327,12 @@ class Mining {
         }
         void verbose(Tile *c) {
             if (!c->isTNT && c->rubble != 0) {
+                amountCleared += c->rubble;
                 numCleared++;
                 clearedTiles.push_back(*c);
                 if (opt.verbose) cout << "Cleared: " << pq.top()->rubble << " at [" << c->row << "," << c->col << "]\n";
                 printMedian(c);
+                c->rubble = 0;
             }
         }
         void printMedian(Tile *c) {
