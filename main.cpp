@@ -213,7 +213,14 @@ class Mining {
             Tile* c = &(m.map2D[m.getStart().first][m.getStart().second]);
             c->discovered = true;
             pq.push(c);
-            // push(c->rubble);
+            if (size == 1 && !c->isTNT && c->rubble != 0) {
+                numCleared++;
+                amountCleared += c->rubbleOrig;
+                if (opt.median) {
+                    push(c->rubble);
+                    printMedian(c);
+                }
+            }
 
             while (!pq.empty() && (c->row < size - 1) && (c->col < size - 1) && (c->row > 0) && (c->col > 0)) {
                 c = pq.top();
@@ -281,11 +288,6 @@ class Mining {
                         r->discovered = true;
                     }
                 }
-            }
-            if (numCleared == 0) {
-                numCleared++;
-                amountCleared += c->rubbleOrig;
-                // what if the only tile is TNT?
             }
             printSummary();
             }
