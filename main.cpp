@@ -6,6 +6,7 @@
 #include <deque>
 #include <queue>
 #include <vector>
+#include <iomanip>
 #include <iostream>
 using namespace std;
 
@@ -258,6 +259,11 @@ class Mining {
                     }
                 }
             }
+            if (numCleared == 0) {
+                numCleared++;
+                amountCleared += c->rubbleOrig;
+                // what if the only tile is TNT?
+            }
             printSummary();
             // m.printInput();
             }
@@ -333,7 +339,7 @@ class Mining {
         void printMedian(Tile *c) {
             if (!opt.median || c->isTNT) return;
             push(c->rubbleOrig);
-            cout << "Median difficulty of clearing rubble is: " << getMedian() << "\n";
+            cout << "Median difficulty of clearing rubble is: " << fixed << setprecision(2) << getMedian() << "\n";
         }
         void printStats() {
 
