@@ -60,6 +60,9 @@ class Map {
         size_t size = numeric_limits<size_t>::max();
         pair<size_t, size_t> start = {numeric_limits<size_t>::max(), numeric_limits<size_t>::max()};
         char format = 'F';
+        int seed = 0;
+        int maxRubble = 0;
+        size_t tnt = 0;
         Options opt;
 
     public:
@@ -101,7 +104,7 @@ class Map {
                     }
             }
             }
-            else { // psudorandom - grid input 
+            else { // grid input 
                 stringstream ss;
                 uint32_t seed, maxRubble, tnt;
                 cin >> junk >> seed >> junk >> maxRubble >> junk >> tnt;
@@ -137,13 +140,38 @@ class Map {
                         }
                     }
                 }  
+
+            else { // map format == R
+                cout << "Seed: " << seed << '\n';
+                cout << "Max_Rubble: " << maxRubble << '\n';
+                cout << "TNT: " << tnt << '\n';
+            }
             cout << endl << endl;
+        }
+        // getter for format
+        char getFormat() {
+            return format;
         }
         // getter for size
         size_t getSize() {
             return size;
         }
-
+        // getter for map2D
+        vector<vector<Tile>> getMap2D() {
+            return map2D;
+        }
+        // getter for maxRubble
+        int getMaxRubble() {
+            return maxRubble;
+        }
+        // getter for seed
+        int getSeed() {
+            return seed;
+        }
+        // getter for tnt
+        size_t getTNT() {
+            return tnt;
+        }
         pair<size_t, size_t> getStart() {
             return start;
         }
@@ -184,11 +212,10 @@ class Mining {
             size_t size = m.getSize();
             Tile* c = &(m.map2D[m.getStart().first][m.getStart().second]);
             c->discovered = true;
-            if (size == 1) push(c->rubbleOrig);
             pq.push(c);
-            verbose(c);
+            // push(c->rubble);
 
-            while (!pq.empty() && (c->row < size) && (c->col < size) && (c->row > 0) && (c->col > 0)) {
+            while (!pq.empty() && (c->row < size - 1) && (c->col < size - 1) && (c->row > 0) && (c->col > 0)) {
                 c = pq.top();
                 verbose(c);
                 pq.pop();
@@ -199,8 +226,8 @@ class Mining {
                     continue; 
 
                 } else {
-                    // amountCleared += c->rubble;
-                    // c->rubble = 0;
+                    amountCleared += c->rubble;
+                    c->rubble = 0;
                 }
                 c->rubble = 0;
 
@@ -255,20 +282,19 @@ class Mining {
                     }
                 }
             }
-            // if (numCleared == 0) {
-            //     numCleared++;
-            //     amountCleared += c->rubbleOrig;
-            //     // what if the only tile is TNT?
-            // }
-
+            if (numCleared == 0) {
+                numCleared++;
+                amountCleared += c->rubbleOrig;
+                // what if the only tile is TNT?
+            }
             printSummary();
-            // m.printInput();
             }
         void expload(Tile *c) {
             priority_queue<Tile*, vector<Tile*>, TileComparator> clearedPQ;
 
             clearedPQ.push(c);
             while (!clearedPQ.empty()) {
+                if (clearedPQ.top()->rubbleOrig == 0) clearedPQ.pop();
                 c = clearedPQ.top();
                 clearedPQ.pop();
                 c->rubble = 0;
@@ -327,12 +353,10 @@ class Mining {
         }
         void verbose(Tile *c) {
             if (!c->isTNT && c->rubble != 0) {
-                amountCleared += c->rubble;
                 numCleared++;
                 clearedTiles.push_back(*c);
                 if (opt.verbose) cout << "Cleared: " << pq.top()->rubble << " at [" << c->row << "," << c->col << "]\n";
                 printMedian(c);
-                c->rubble = 0;
             }
         }
         void printMedian(Tile *c) {
@@ -482,8 +506,9 @@ void getMode(int argc, char *argv[], Options &opt)
         default:
             // Handle invalid options
             // e.g., handleInvalidOption();
-            cerr << "Invalid input mode" << endl;
+            cerr << "Invalid command line arg" << endl;
             exit(1);
+
         }
     }
 } // getMode()
