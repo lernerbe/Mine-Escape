@@ -1,0 +1,38 @@
+# Build artifacts
+*.o
+*.exe
+*.out
+*.app
+
+# Executables
+mineEscape
+mineEscape_debug
+mineEscape_valgrind
+mineEscape_profile
+
+# Debug symbols
+*.dSYM/
+*.dSYM.zip
+
+# Submission archives
+*.tar.gz
+
+# IDE files
+.vscode/
+.vs/
+*.code-workspace
+*.vcxproj*
+*.sln
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*~
+*.tmp
+*.swp
+*.swo
+
+# Test outputs
+test_output_*

@@ -325,7 +325,7 @@ help:
 #
 # ADD YOUR OWN DEPENDENCIES HERE
 
-mineEscape: main.cpp main.objects
+mineEscape: main.o P2random.o
 ######################
 # TODO (end) #
 ######################

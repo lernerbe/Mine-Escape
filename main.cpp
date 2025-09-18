@@ -32,30 +32,21 @@ struct Tile {
 
 struct TileComparator {
     bool operator()(const Tile *a, const Tile *b) const {
-        // Compare based on priority criteria:
-        // 1. Smallest rubble value
-        // 2. Column number
-        // 3. Row number
-        // if (a->rubble == b->rubble && a->col == b->col && a->row && b->row && a->row != 500) {
-        //     cout << "ERROR: same value checked in pred\n";
-        //     exit(1);
-        // }
         if (a->rubble != b->rubble) {
-            return a->rubble > b->rubble; // Smallest rubble value has higher priority
+            return a->rubble > b->rubble;
         }
         if (a->col != b->col) {
-            return a->col > b->col; // Smaller column number has higher priority
+            return a->col > b->col;
         }
-        return a->row > b->row; // Smaller row number has higher priority
+        return a->row > b->row;
     }
 };
 
 void printHelp(char *argv[])
 {
-    cout << "Usage: " << argv[0] << " [-m resize|reserve|nosize] | -h\n";
-    cout << "This program is to help you learn command-line processing,\n";
-    cout << "reading data into a vector, the difference between resize and\n";
-    cout << "reserve and how to properly read until end-of-file." << endl;
+    cout << "Usage: " << argv[0] << " [-s N] [-m] [-v] | -h\n";
+    cout << "Mine Escape: reads an input map from stdin (M or R mode) and\n";
+    cout << "simulates escape by clearing least-difficulty neighbors with TNT chains.\n";
 } // printHelp()
 
 
@@ -114,7 +105,6 @@ class Map {
                 uint32_t seed, maxRubble, tnt;
                 cin >> junk >> seed >> junk >> maxRubble >> junk >> tnt;
                 P2random::PR_init(ss, static_cast<uint32_t>(size), seed, maxRubble, tnt);
-                // istream &inputStream = (format == 'M') ? cin : ss;
                 
                 for (size_t i = 0; i < size; ++i) {
                     for (size_t j = 0; j < size; j++) {
@@ -134,7 +124,6 @@ class Map {
         void printInput() {
             cout << "Size: " << size << endl;
             cout << "Start: " << start.first << " " << start.second << "\n";
-            //cout << "FORMAT: " << format << '\n';
             if (format == 'M') { // map format == M
                 for (size_t i = 0; i < size; ++i) {
                     for (size_t j = 0; j < size; j++) {
@@ -182,7 +171,6 @@ class Map {
         }
 
         ~Map() {
-            // Destructor to deallocate memory for map2D
             map2D.clear();
         }
         Map() : 
@@ -233,33 +221,18 @@ class Mining {
                 verbose(c);
                 pq.pop();
                 if (c->investigated) continue;
-                // do I need this condition for rubble = 0
                 c->investigated = true;
                 if (c->isTNT && c->rubble != 0) {
                     expload(c); 
-                    // c->investigated = true;
                     continue; 
 
                 } else {
                     amountCleared += c->rubble;
                     c->rubble = 0;
                 }
-                // if (c->isTNT) {
-                //     cout << "ERROR: isTNT solve function\n";
-                //     exit(1);
-                // }
                 if (c->row > 0) {
                     Tile *t = &(m.map2D[c->row-1][c->col]); // top
                     if (!t->discovered) {
-                        // if (t->isTNT) {
-                        //     expload(t);
-                        //     t->investigated = true;
-                        //     // continue;
-                        // }
-                        // else {
-                        //     pq.push(t);
-                        //     t->discovered = true;
-                        // }
                         pq.push(t);
                         t->discovered = true;
                     }
@@ -267,15 +240,6 @@ class Mining {
                 if (c->row < m.getSize() - 1) {
                     Tile *b = &(m.map2D[c->row+1][c->col]);  // bottom
                     if (!b->discovered) {
-                        // if (b->isTNT) {
-                        //     expload(b);
-                        //     b->investigated = true;
-                        //     // continue;
-                        // }
-                        // else {
-                        //     pq.push(b);
-                        //     b->discovered = true;
-                        // }
                         pq.push(b);
                         b->discovered = true;
                     }
@@ -283,15 +247,6 @@ class Mining {
                 if (c->col > 0) {
                     Tile *l = &(m.map2D[c->row][c->col-1]);  // left
                     if (!l->discovered) {
-                        // if (l->isTNT) {
-                        //     expload(l);
-                        //     l->investigated = true;
-                        //     // continue;
-                        // }
-                        // else {
-                        //     pq.push(l);
-                        //     l->discovered = true;
-                        // }
                         pq.push(l);
                         l->discovered = true;
                     }
@@ -299,15 +254,6 @@ class Mining {
                 if (c->col < m.getSize() - 1) {
                     Tile *r = &(m.map2D[c->row][c->col+1]); // right
                     if (!r->discovered) {
-                        // if (r->isTNT) {
-                        //     expload(r);
-                        //     r->investigated = true;
-                        //     // continue;
-                        // }
-                        // else {
-                        //     pq.push(r);
-                        //     r->discovered = true;
-                        // }
                         pq.push(r);
                         r->discovered = true;
                     }
@@ -319,9 +265,7 @@ class Mining {
             priority_queue<Tile*, vector<Tile*>, TileComparator> clearedPQ;
 
             clearedPQ.push(c);
-            // c->isCleared = true; // this is causing the 3s error
             while (!clearedPQ.empty()) {
-                // if (clearedPQ.top()->rubbleOrig == 0) clearedPQ.pop();
                 c = clearedPQ.top();
                 clearedPQ.pop();
                 c->rubble = 0;
@@ -329,12 +273,10 @@ class Mining {
                     pq.push(c);
                     c->discovered = true;
                 }
-                // if (c->investigated) continue;
                 if (c->isTNT && !c->isCleared) {
                     c->isCleared = true;
                     if (opt.verbose) cout << "TNT explosion at [" << c->row << "," << c->col << "]!\n";
                     clearedTiles.push_back(*c);
-                    // printMedian(c);
                 }
                 else {
                     if (c->rubbleOrig != 0 && !c->isCleared) {
@@ -350,33 +292,25 @@ class Mining {
                 
                 if (c->row > 0) {
                 Tile *t = &(m.map2D[c->row-1][c->col]); // top
-                    if (!t->isCleared) { // && t->rubble != 0 
-                        // t->discovered = true;
-                        // t->isCleared = true;
+                    if (!t->isCleared) {
                         clearedPQ.push(t);
                     }
                 }
                 if (c->row < m.getSize() - 1) {
                     Tile *b = &(m.map2D[c->row+1][c->col]);  //  bottom
-                    if (!b->isCleared) { //
-                        // b->discovered = true;
-                        // b->isCleared = true;
+                    if (!b->isCleared) {
                         clearedPQ.push(b);
                     }
                 }
                 if (c->col > 0) {
                     Tile *l = &(m.map2D[c->row][c->col-1]);  // left
-                    if (!l->isCleared) { //
-                        // l->discovered = true;
-                        // l->isCleared = true;
+                    if (!l->isCleared) {
                         clearedPQ.push(l);
                     }
                 }
                 if (c->col < m.getSize() - 1) {
                     Tile *r = &(m.map2D[c->row][c->col+1]); // right
-                    if (!r->isCleared) { //
-                        // r->discovered = true;
-                        // r->isCleared = true;
+                    if (!r->isCleared) {
                         clearedPQ.push(r);
                     }
                 }
@@ -440,7 +374,6 @@ class Mining {
             for (auto it = sortedByRubble.rbegin(); it != sortedByRubble.rbegin() + static_cast<long>(N); it++) {
                 printTileInfo(*it);
             }
-            // printTileInfo(sortedByRubble[size - N - 1]);
         }
         void printTileInfo(const Tile t) {
             if (t.isTNT) {
@@ -455,12 +388,9 @@ class Mining {
             }
             if (rubble >= maxHeap.top()) {
                 maxHeap.push(rubble);
-                // cout << "PUSHED: " << rubble << " to maxHeap\n";
             }
             else {
-                minHeap.push(rubble); //otherwise it is a lower number
-                // cout << "PUSHED: " << rubble << " to minHeap\n";
-
+                minHeap.push(rubble);
             }
             // Keep both heaps balanced
             if (maxHeap.size() - minHeap.size() == 2) {
@@ -506,8 +436,6 @@ void getMode(int argc, char *argv[], Options &opt)
     int choice;
     int index = 0;
     option long_options[] = {
-        // TODO: Fill in two lines, for the "mode" ('m') and
-        // the "help" ('h') options.
         {"help", no_argument, nullptr, 'h'},
         {"stats", required_argument, nullptr, 's'},
         {"median", no_argument, nullptr, 'm'},
@@ -515,7 +443,6 @@ void getMode(int argc, char *argv[], Options &opt)
         
     }; // long_options[]
 
-    // TODO: Fill in the double quotes, to match the mode and help options.
     while ((choice = getopt_long(argc, argv, "hs:mv", long_options, &index)) != -1)
     {
         switch (choice)
@@ -524,26 +451,18 @@ void getMode(int argc, char *argv[], Options &opt)
             printHelp(argv);
             exit(0);
         case 's':
-            // Process stats option with optarg as the argument
-            // e.g., processStats(optarg);
             {
                 int arg{stoi(optarg)};
                 opt.stats = static_cast<size_t>(arg);
                 break;
             }
         case 'm':
-            // Process median option
-            // e.g., processMedian();
             opt.median = true;
             break;
         case 'v':
-            // Process verbose option
-            // e.g., processVerbose();
             opt.verbose = true;
             break;
         default:
-            // Handle invalid options
-            // e.g., handleInvalidOption();
             cerr << "Invalid command line arg" << endl;
             exit(1);
 
@@ -558,7 +477,6 @@ int main(int argc, char *argv[])
     getMode(argc, argv, opt);
     Map m;
     Mining mine(opt, m);
-    //m.readMap();
     mine.solve();
 
     return 0;
